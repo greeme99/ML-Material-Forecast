@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 ML 기반 자재 수요 예측</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 오프라인/사내망 시연 대비: Chart.js를 로컬에서 로드 (v4.4.2 고정) -->
+    <script src="vendor/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-left">
+                <h1>S3 ML 기반 자재 수요 예측 <span class="badge demo-badge">Demo</span></h1>
+            </div>
+            <div class="header-right">
+                <span id="api-status" class="badge status-badge checking">API 연결 중...</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <aside class="control-panel">
+                <h2>Control Panel</h2>
+                
+                <div class="form-group">
+                    <label for="part-select">부품 선택 (Part)</label>
+                    <select id="part-select">
+                        <option value="">데이터 로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="horizon-select">예측 기간 (Horizon)</label>
+                    <select id="horizon-select">
+                        <option value="4">4주</option>
+                        <option value="8">8주</option>
+                        <option value="12">12주</option>
+                    </select>
+                </div>
+
+                <div class="form-group scenario-group">
+                    <label for="scenario-slider">시나리오 (수요 증감률)</label>
+                    <div class="slider-container">
+                        <input type="range" id="scenario-slider" min="-20" max="30" value="0">
+                        <span id="scenario-value" class="value-display">0%</span>
+                    </div>
+                </div>
+
+                <button id="predict-btn" class="primary-btn">예측 실행 (Predict)</button>
+
+                <div class="kpi-summary">
+                    <h3>KPI 요약</h3>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Holdout WAPE</span>
+                        <span class="kpi-value" id="kpi-wape">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">최근 4주 평균 수요</span>
+                        <span class="kpi-value" id="kpi-avg">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">변동계수 (CV)</span>
+                        <span class="kpi-value" id="kpi-cv">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">시나리오 예측 합계</span>
+                        <span class="kpi-value" id="kpi-future-sum">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Baseline 예측 합계</span>
+                        <span class="kpi-value" id="kpi-base-sum">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Lead Time / 기간 누적수요</span>
+                        <span class="kpi-value" id="kpi-leadtime">-</span>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="dashboard">
+                <div class="chart-container">
+                    <h3>Historical Demand & Holdout (Actual vs Predicted)</h3>
+                    <canvas id="historyChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Future Forecast (Baseline vs Scenario)</h3>
+                    <canvas id="futureChart"></canvas>
+                </div>
+
+                <div class="table-container">
+                    <h3>예측 상세 (주차별)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Week Start</th>
+                                <th>Baseline Forecast</th>
+                                <th>ML Forecast</th>
+                                <th>Scenario Forecast</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecast-table-body">
+                            <tr>
+                                <td colspan="4" class="empty-state">예측을 실행해주세요.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>모델 성능 비교 (Holdout, 1-step-ahead)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>모델</th>
+                                <th>WAPE</th>
+                                <th>MAE</th>
+                                <th>RMSE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-table-body">
+                            <tr><td colspan="4" class="empty-state">예측을 실행해주세요.</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="note" id="eval-note"></p>
+                </div>
+
+                <div class="table-container">
+                    <h3>통계 리포트</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>항목</th><th>값</th></tr>
+                        </thead>
+                        <tbody id="stats-table-body">
+                            <tr><td colspan="2" class="empty-state">예측을 실행해주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
